@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>YukinoChat Framework</title>
+  <link rel="stylesheet" href="/style.css">
+
+  <script src="/audio-clarity.js" defer></script>
+  <script src="/stream-audio.js" defer></script>
+  <script src="/voice.js" defer></script>
+  <script src="/latency.js" defer></script>
+  <script src="/avatar.js" defer></script>
+  <meta name="description" content="YukinoChat Framework: local AI notebook, text-only preview">
+  <link rel="icon" href="data:,">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="scene" aria-hidden="true"></div>
+  <div id="avatar-stage" class="avatar-stage" role="region" aria-label="助手互动形象" hidden></div>
+  <div class="scene-veil" aria-hidden="true"></div>
+  <header class="app-bar">
+    <button id="menu-button" class="icon-button menu-button" type="button" aria-label="打开会话列表" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <div class="wordmark"><span class="notebook-mark" aria-hidden="true">▤</span> 对话手记</div>
+    <span class="bar-caption">AFTER SCHOOL · A LITTLE CONVERSATION</span>
+    <span id="connection-status" class="connection-status" role="status"><span class="status-dot"></span><span id="connection-label">正在连接</span></span>
+    <button id="width-button" class="quiet-button" type="button" aria-pressed="false" title="切换阅读宽度">宽屏阅读</button>
+    <button id="avatar-toggle" class="quiet-button avatar-toggle" type="button" aria-pressed="true" title="切换角色的眨眼、呼吸与说话动作">动态形象</button>
+  </header>
+  <button id="sidebar-scrim" class="sidebar-scrim" aria-label="关闭会话列表" type="button" hidden></button>
+  <aside id="sidebar" class="sidebar" aria-label="会话列表">
+    <div class="notebook-heading"><span>SERVICE CLUB NOTEBOOK</span><strong>放学后</strong></div>
+    <button id="new-conversation" class="new-note" type="button"><span aria-hidden="true">＋</span> 写下新的手记</button>
+    <div class="section-label">我们的对话</div>
+    <nav id="conversation-list" class="conversation-list" aria-label="已保存的对话"></nav>
+    <div class="sidebar-foot"><span class="tiny-sakura" aria-hidden="true">❀</span><p>助手形象为 AI 角色演绎。<br><small>对话由 Codex 提供。</small></p></div>
+  </aside>
+  <main class="workspace">
+    <div class="conversation-heading">
+      <div class="heading-text"><span class="eyebrow">A PAGE FOR TODAY</span><h1 id="conversation-title">放学后的奉仕部</h1></div>
+      <button id="export-button" class="export-button" type="button" title="导出当前对话为 JSON" disabled>导出手记</button>
+    </div>
+    <div id="error-banner" class="error-banner" role="alert" hidden><span id="error-text"></span><button id="retry-button" type="button">重新连接</button><button id="dismiss-error" type="button" aria-label="收起错误提示">×</button></div>
+    <section class="voice-controls" aria-label="日语朗读">
+      <div class="voice-toolbar">
+        <div class="voice-options">
+          <label class="voice-provider-label" for="voice-provider">音源 <select id="voice-provider" disabled><option value="" disabled selected>正在检查……</option><option value="gpt-sovits">本地 · GPT-SoVITS</option><option value="moss">云端 · B</option></select></label>
+          <label class="voice-toggle"><input id="voice-auto" type="checkbox" checked> 自动朗读</label>
+          <label class="voice-toggle" title="轻减低频浑浊、突出人声；关闭可对比原声音色"><input id="voice-clarity" type="checkbox" checked> 清晰声音</label>
+        </div>
+        <div class="voice-buttons">
+          <button id="voice-preview" type="button" disabled>试听</button>
+          <button id="voice-replay" type="button" disabled>重听回复</button>
+          <button id="voice-resume" type="button" hidden>点击播放</button>
+          <button id="voice-stop" type="button" disabled>停止朗读</button>
+          <button id="voice-refresh" type="button">检查声音</button>
+        </div>
+      </div>
+      <span id="voice-status" class="voice-status" role="status">正在检查声音……</span>
+    </section>
+    <section id="conversation-scroll" class="conversation-scroll" aria-label="对话内容" tabindex="0">
+      <div id="empty-state" class="empty-state">
+        <span class="empty-flower" aria-hidden="true">❀</span>
+        <p class="empty-eyebrow">放学后的时间，留给此刻。</p>
+        <h2>今天，想从哪里开始？</h2>
+        <p>写下问题、想法，或一件想一起完成的事。</p>
+        <div class="empty-rule" aria-hidden="true"></div>
+      </div>
+      <div id="messages" class="messages"></div>
+      <div id="thinking" class="thinking" role="status" hidden><span class="thinking-dots" aria-hidden="true">···</span> 助手正在回应</div>
+      <section id="approval-panel" class="approval-panel paper" aria-label="需要你的确认" hidden></section>
+      <div class="scroll-end" aria-hidden="true"></div>
+    </section>
+    <button id="jump-bottom" class="jump-bottom" type="button" hidden>↓ 回到最新</button>
+    <form id="composer" class="composer paper">
+      <label for="message-input" class="name-tag composer-label"><span class="clip" aria-hidden="true"></span>轮到你了</label>
+      <textarea id="message-input" rows="2" placeholder="把想说的话，写在这里……" aria-label="发送给助手的消息" maxlength="100000"></textarea>
+      <div class="composer-toolbar">
+        <span id="composer-note" class="composer-note">Enter 发送 · Shift + Enter 换行</span>
+        <label id="response-mode-label" class="response-mode-label" hidden><span class="response-mode-caption">回应</span><select id="response-mode" aria-label="回应方式"><option value="daily">日常</option><option value="deep">深思</option></select></label>
+        <button id="stop-button" class="choice-button stop-button" type="button" hidden>停止回应 <span aria-hidden="true">■</span></button>
+        <button id="send-button" class="choice-button" type="submit" disabled>递给助手 <span aria-hidden="true">▷</span></button>
+      </div>
+    </form>
+  </main>
+  <div class="character-caption" aria-hidden="true"><span>雪之下 助手</span><small>FRAMEWORK PREVIEW</small></div>
+  <div id="toast" class="feedback" role="status"></div>
+</body>
+</html>

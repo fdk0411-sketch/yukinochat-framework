@@ -1,0 +1,89 @@
+/* Independent scene/character layer. This file can remain when sprites are
+   replaced by a Live2D renderer; conversation and voice do not depend on it. */
+:root { --sidebar: 260px; --chat-width: 43vw; }
+.avatar-stage { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+.avatar-plane { position:absolute; width:max(100vw,calc(100svh * var(--scene-ratio,1.777))); height:max(100svh,calc(100vw / var(--scene-ratio,1.777))); left:50%; top:50%; transform:translate(-50%,-50%); }
+.avatar-room,.avatar-frame { display:block; position:absolute; inset:0; width:100%; height:100%; object-fit:fill; user-select:none; }
+.avatar-face-patch { z-index:1; }
+.avatar-face-patch[data-frame="talk"] { z-index:2; }
+.avatar-actor { position:absolute; inset:0; transform-origin:76% 86%; }
+.avatar-state { position:absolute; inset:0; opacity:0; transition:opacity .32s ease; }
+.avatar-state.is-current { opacity:1; }
+.avatar-stage:not(.avatar-moving) .avatar-state { transition:none; }
+.avatar-state.avatar-placed { right:auto; bottom:auto; }
+.avatar-moving .avatar-actor { animation:avatar-breathe 6.4s ease-in-out infinite; }
+@keyframes avatar-breathe { 0%,100% { transform:translateY(0) scaleY(1); } 50% { transform:translateY(-.6px) scaleY(1.0012); } }
+.avatar-ready .scene { display:none; }
+.scene-veil { z-index:0; background:linear-gradient(90deg,rgba(241,249,250,.65) 0%,rgba(241,249,250,.40) 36%,rgba(241,249,250,.02) 54%,transparent 65%); }
+.app-bar { background:rgba(250,253,253,.77); padding:0 24px; }
+.menu-button { display:block; }
+.sidebar { width:var(--sidebar); transform:translateX(-102%); transition:transform .2s ease; box-shadow:12px 0 36px #29405222; }
+.sidebar-open .sidebar { transform:translateX(0); }
+.sidebar-open .sidebar-scrim { display:block; position:fixed; inset:var(--bar) 0 0; z-index:3; background:#35546629; border:0; backdrop-filter:blur(2px); }
+.workspace { z-index:1; margin-left:0; width:clamp(470px,var(--chat-width),820px); padding:26px 30px 24px 34px; }
+.conversation-heading { padding-bottom:18px; }
+.message { --paper:rgba(252,254,255,.90); font-size:14px; }
+.voice-controls { background:#f8fdfee0; }
+.composer { --paper:rgba(252,254,255,.94); }
+.character-caption { z-index:1; right:4%; bottom:3.5%; padding:9px 14px; }
+.character-caption span { font-size:18px; }
+.avatar-toggle { display:inline-flex; align-items:center; gap:6px; }
+.avatar-toggle::before { content:''; width:6px; height:6px; background:#72a99a; border-radius:50%; }
+.avatar-toggle[aria-pressed="false"]::before { background:#a1aeb4; }
+.live2d-canvas { position:absolute; inset:0; width:100%!important; height:100%!important; pointer-events:none; }
+.live2d-desk { clip-path:polygon(0 82.5%,24.5% 79%,100% 87.3%,100% 100%,0 100%); pointer-events:none; }
+.avatar-hotspot { position:absolute; pointer-events:auto; border:0; background:transparent; cursor:pointer; border-radius:48%; -webkit-tap-highlight-color:transparent; }
+.avatar-hotspot-hair { left:68.5%; top:19%; width:16%; height:23%; }
+.avatar-hotspot-greet { left:68%; top:42%; width:18%; height:35%; }
+.avatar-hotspot:hover { background:radial-gradient(ellipse,rgba(255,255,255,.035),transparent 70%); }
+.avatar-hotspot:focus-visible { outline:2px solid #628f9b; outline-offset:5px; background:#e6faff20; }
+.avatar-reaction { position:absolute; left:65%; top:11%; max-width:29%; padding:10px 15px; border:1px solid #d4dfe3; border-radius:12px 12px 3px 12px; background:#fcfefeeb; color:#415760; font-size:13px; line-height:1.65; box-shadow:0 5px 20px #34516212; opacity:0; transition:opacity .22s; pointer-events:none; }
+.avatar-reaction.visible { opacity:1; }
+.wide-reading .workspace { width:clamp(470px,54vw,1000px); }
+.wide-reading .scene-veil { background:linear-gradient(90deg,#edf7fabf,#edf7fa52 50%,transparent 70%); }
+.wide-reading .character-caption { display:block; }
+@media(min-width:1550px) { .workspace { padding:32px 34px 28px 42px; } .message { font-size:15px; } }
+@media(max-width:1180px) and (min-width:901px) { .workspace,.wide-reading .workspace { width:47vw; min-width:420px; padding:22px 22px 22px 26px; } .bar-caption { display:none; } .avatar-plane { left:auto; right:0; transform:translateY(-50%); } .quiet-button { display:inline-flex; } }
+/* On a phone the scene becomes a compact view above the notebook, keeping the
+   seated character visible without covering the composer or touch controls. */
+@media(max-width:900px) {
+  :root { --bar:52px; --scene-height:clamp(170px,29svh,280px); }
+  .app-bar { padding:0 14px; gap:12px; }
+  .bar-caption,.character-caption { display:none !important; }
+  .wordmark { font-size:13px; }
+  .quiet-button { display:inline-flex; padding-left:10px; font-size:10px; }
+  #width-button { display:none; }
+  .connection-status { font-size:9px; }
+  .avatar-stage { top:var(--bar); bottom:auto; height:var(--scene-height); background:#dce0e5; }
+  .avatar-stage::before { content:''; position:absolute; inset:-12px; background:var(--avatar-room-image) left center / cover no-repeat; filter:blur(10px); opacity:.65; }
+  .avatar-plane { width:calc(var(--scene-height) * var(--scene-ratio,1.777)); height:var(--scene-height); left:auto; right:0; top:0; transform:none; }
+  /* Keep a clicked reply on the table's lower left, clear of the face.
+     Compensate when the scene plane is wider than the phone viewport. */
+  .avatar-reaction { left:max(12px,calc(100% - 100vw + 12px)); top:auto; bottom:10px; max-width:min(58%,260px); z-index:3; padding:7px 10px; border:1px solid #9cb6c2; border-radius:8px; background:#fcfefe; color:#344d59; font-size:11px; line-height:1.55; box-shadow:0 3px 12px #243e4c26; transition:none; }
+  .scene { top:var(--bar); bottom:auto; height:var(--scene-height); background-position:83% 44%; }
+  .scene-veil { top:calc(var(--bar) + var(--scene-height)); background:rgba(237,246,249,.95); }
+  .workspace,.wide-reading .workspace { margin:var(--scene-height) 0 0; width:100%; min-width:0; height:calc(100svh - var(--bar) - var(--scene-height)); padding:14px 18px 14px; }
+  .conversation-heading { padding-bottom:12px; }
+  .eyebrow { display:none; }
+  h1 { margin:0; font-size:15px; }
+  .voice-controls { margin-bottom:10px; padding:7px 10px; }
+  .voice-status { margin-top:4px; }
+  .message { font-size:13px; padding:25px 16px 10px 38px; margin-bottom:28px; }
+  .composer { margin-top:12px; padding-top:19px; }
+  .composer textarea { min-height:40px; font-size:13px; }
+  .composer-note { max-width:155px; }
+  .empty-state { margin:12px auto; }
+  .empty-flower,.empty-rule,.empty-eyebrow { display:none; }
+  .empty-state h2 { font-size:17px; margin:8px 0; }
+  .empty-state p { font-size:11px; margin:6px 0; }
+  .jump-bottom { bottom:150px; }
+}
+@media(max-width:460px) { .app-bar { gap:9px; padding:0 10px; } .notebook-mark { display:none; } .wordmark { font-size:12px; letter-spacing:.03em; } .avatar-toggle { font-size:9px; padding-left:8px; } .connection-status { gap:4px; font-size:8px; } .workspace,.wide-reading .workspace { padding:12px 12px 13px; } .voice-buttons button { font-size:9px; padding:3px 5px; } }
+@media(max-height:650px) and (max-width:900px) { :root { --scene-height:145px; } .voice-status { display:none; } .conversation-heading { padding-bottom:8px; } }
+@media(prefers-reduced-motion:reduce) {
+  .avatar-actor { animation:none!important; } .avatar-state { transition:none!important; }
+  /* This override applies only after an explicit user choice, and only to the
+     avatar. The rest of the notebook keeps the OS reduced-motion behavior. */
+  .avatar-stage.avatar-motion-override.avatar-moving .avatar-actor { animation:avatar-breathe 6.4s ease-in-out infinite!important; }
+  .avatar-stage.avatar-motion-override.avatar-moving .avatar-state { transition:opacity .32s ease!important; }
+}

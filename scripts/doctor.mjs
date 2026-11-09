@@ -1,0 +1,13 @@
+import {spawnSync} from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const nodeOK=Number(process.versions.node.split('.')[0])===24;
+console.log('Node:',process.version,nodeOK?'OK':'Install Node.js 24 LTS.');
+const found=spawnSync('where.exe',['codex.exe'],{encoding:'utf8',windowsHide:true});
+console.log('Codex on PATH:',found.status===0?'found':'not found; the launcher also checks the official per-user installation.');
+console.log('Persona:',fs.existsSync(path.join(root,'persona/assistant.md'))?'present':'missing');
+console.log('Your own Codex login is required. This check does not authenticate or generate replies.');
+console.log('This text-only preview contains no Live2D or speech assets.');
+process.exitCode=nodeOK?0:1;

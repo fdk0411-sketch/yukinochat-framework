@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "enabled": false,
+  "dailyEffort": "low",
+  "deepEffort": "high",
+  "conciseReplies": true
+}

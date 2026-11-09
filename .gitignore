@@ -1,0 +1,10 @@
+data/
+logs/
+workspace/
+node_modules/
+.env
+.env.*
+!.env.example
+voice/config.json
+reply/config.json
+*.log

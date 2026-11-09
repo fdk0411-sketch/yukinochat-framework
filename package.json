@@ -1,0 +1,16 @@
+{
+  "name": "yukinochat-framework",
+  "version": "0.1.0-rc.1",
+  "private": true,
+  "description": "Text-only local AI notebook framework preview",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "license": "MIT",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test tests/*.test.cjs tests/*.test.mjs",
+    "doctor": "node scripts/doctor.mjs"
+  }
+}
