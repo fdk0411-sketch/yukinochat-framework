@@ -1,0 +1,90 @@
+name: Publish framework preview
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/framework-preview.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: framework-preview-0.1.0-rc.1
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'fdk0411-sketch/yukinochat-framework' && github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - name: Test framework
+        run: npm test
+      - name: Verify sealed payload and create portable archive
+        run: |
+          python - <<'PY'
+          import hashlib
+          import pathlib
+          import zipfile
+
+          root = pathlib.Path('.').resolve()
+          manifest = root / 'FILES.sha256'
+          expected = '11c27e6a8806084776f0c6ae70262966c84cbe18a150e577fb7d89bafe94634e'
+          assert hashlib.sha256(manifest.read_bytes()).hexdigest() == expected, 'Manifest changed'
+          payload = {}
+          for line in manifest.read_text(encoding='utf-8').splitlines():
+              digest, name = line.split(None, 1)
+              name = name.lstrip('*')
+              rel = pathlib.PurePosixPath(name)
+              assert not rel.is_absolute() and '..' not in rel.parts and '\\' not in name
+              target = (root / name).resolve()
+              assert target.is_relative_to(root) and not (root / name).is_symlink()
+              assert name not in payload, 'Duplicate payload path'
+              data = target.read_bytes()
+              assert hashlib.sha256(data).hexdigest() == digest, name
+              payload[name] = data
+          payload['FILES.sha256'] = manifest.read_bytes()
+          assert len(payload) == 49, 'Unexpected payload count'
+          out = root / 'dist'
+          out.mkdir(exist_ok=True)
+          archive = out / 'yukinochat-framework-0.1.0-rc.1-windows.zip'
+          prefix = 'yukinochat-framework-0.1.0-rc.1/'
+          # Fixed metadata and uncompressed ZIP keep bytes reproducible across hosts.
+          with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_STORED) as bundle:
+              for name, data in sorted(payload.items()):
+                  info = zipfile.ZipInfo(prefix + name, date_time=(2026, 11, 9, 0, 0, 0))
+                  info.create_system = 3
+                  info.external_attr = 0o100644 << 16
+                  bundle.writestr(info, data)
+          with zipfile.ZipFile(archive) as bundle:
+              assert len(bundle.infolist()) == 49
+              for name, data in payload.items():
+                  assert bundle.read(prefix + name) == data, name
+          digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+          archive.with_suffix('.zip.sha256').write_bytes((digest + '  ' + archive.name + '\n').encode('ascii'))
+          print('Verified 49 files; ZIP SHA-256:', digest)
+          PY
+      - name: Publish prerelease and verified attachments
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh release create v0.1.0-rc.1 \
+            dist/yukinochat-framework-0.1.0-rc.1-windows.zip \
+            dist/yukinochat-framework-0.1.0-rc.1-windows.zip.sha256 \
+            --target "$GITHUB_SHA" --title 'YukinoChat Framework 0.1.0-rc.1' \
+            --notes-file RELEASE_NOTES.md --prerelease --draft
+          gh release edit v0.1.0-rc.1 --draft=false --prerelease
