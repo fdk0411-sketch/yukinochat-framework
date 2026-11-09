@@ -41,3 +41,36 @@ CLI：`node scripts/initialize.mjs`，然后 `npm start`。直接 `npm start` �
 候选版本，需结合 VERIFY.md 查看已实际完成与尚未完成的验证。
 MIT 许可仅覆盖包内可授权的应用源码；第三方范围见 THIRD_PARTY_NOTICES.md。
 本项目为独立实验性工具，不代表原作、角色权利人或 OpenAI 官方产品。
+
+## 界面演示
+
+以下为公开框架测试版的实际浏览器截图。对话内容来自固定测试数据，用于展示界面与布局，不代表真实模型的回复质量；截图中的“已连接 Codex”为测试连接状态。
+
+### 桌面聊天界面
+
+左侧管理会话，右侧查看消息、输入文字和导出手记。
+
+![框架测试版桌面聊天界面](docs/images/framework-desktop.png)
+
+### 窄窗口布局
+
+桌面浏览器在 460 像素宽度下的布局验证，展示输入区和消息的自适应效果；不表示已验证手机安装。
+
+<img src="docs/images/framework-mobile.png" alt="框架测试版窄窗口布局" width="460">
+
+## 框架结构
+
+```mermaid
+flowchart TD
+    User["用户"] --> UI["浏览器界面<br/>会话、流式文字、停止回复、JSON 导出"]
+    UI <-->|"本机 HTTP / 流式事件"| Server["Node.js 本地服务<br/>127.0.0.1"]
+    Server <-->|"标准输入输出"| CLI["官方 Codex CLI<br/>app-server"]
+    CLI <-->|"网络 · 用户自己的账号"| Model["模型服务"]
+    Server <-->|"会话读写"| Data["本地 data/conversations.json"]
+    Persona["persona/assistant.md<br/>独立助理提示词"] --> Server
+```
+
+公开测试版启用文字聊天；角色动画和语音接口源码保留供开发参考，未启用模型、素材或音色。
+
+截图与本节为发布后的文档补充。已发布的 `v0.1.0-rc.1` 下载包和标签保持不变；下载请使用 [Releases 页面](https://github.com/fdk0411-sketch/yukinochat-framework/releases/tag/v0.1.0-rc.1)。
+
